@@ -1,5 +1,4 @@
 import java.util.*;
-import java.util.List;
 
 /**
  * Represents the 2D World in which this simulation is running.
@@ -80,11 +79,11 @@ public final class World {
     }
 
     /** Returns the (optional) nearest world entity of the given kind(s) to the point.*/
-    public Optional<Entity> findNearest(Point position, List<Entity.EntityKind> kinds) {
+    public Optional<Entity> findNearest(Point position, List<Class<?>> kinds) {
         List<Entity> ofType = new LinkedList<>();
-        for (Entity.EntityKind kind : kinds) {
+        for (Class<?> kind : kinds) {
             for (Entity entity : this.entities) {
-                if (entity.getKind() == kind) {
+                if (kind == entity.getClass()) {
                     ofType.add(entity);
                 }
             }
@@ -100,14 +99,36 @@ public final class World {
                     "World position %s out of bounds", entity.getPosition()
             ));
         }
-        if (isOccupied(entity.getPosition())) {
+        if (isOccupied(entity.getPosition()) && entity.getClass() != Potion.class) {
             throw new IllegalArgumentException(String.format(
                     "World already occupied at position %s", entity.getPosition()
             ));
         }
-
+        
         setOccupancyCell(entity.getPosition(), entity);
         entities.add(entity);
+    }
+
+    /** Attempts to add an entity to the world. */
+    public void addPotion(EventScheduler scheduler, Potion pot) {
+        Optional<Entity> ent = this.getOccupant(pot.getPosition());
+        if(ent.isPresent()){
+            scheduler.unscheduleAllEvents(ent.get());
+            removeEntityAt(ent.get().getPosition());
+        }
+        
+        if (!inBounds(pot.getPosition())) {
+            throw new IllegalArgumentException(String.format(
+                    "World position %s out of bounds", pot.getPosition()
+            ));
+        }
+        if (isOccupied(pot.getPosition())) {
+            throw new IllegalArgumentException(String.format(
+                    "World already occupied at position %s", pot.getPosition()
+            ));
+        }
+        setOccupancyCell(pot.getPosition(), pot);
+        entities.add(pot);
     }
 
     /** Moves an entity in the world, updating data structures as necessary. */
@@ -126,6 +147,11 @@ public final class World {
     public void removeEntity(EventScheduler scheduler, Entity entity) {
         scheduler.unscheduleAllEvents(entity);
         removeEntityAt(entity.getPosition());
+    }
+    public void removePotionAndEntity(EventScheduler scheduler, Entity entity, Potion potion) {
+        scheduler.unscheduleAllEvents(entity);
+        removeEntityAt(entity.getPosition());
+        removeEntityAt(potion.getPosition());
     }
 
     /** Removes an entity from a given position in the world. **Does not** unschedule its events. */

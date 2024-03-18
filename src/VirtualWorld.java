@@ -70,6 +70,7 @@ public final class VirtualWorld extends PApplet {
     /** Handles command line arguments. */
     public void parseCommandLine(String[] args) {
         for (String arg : args) {
+            System.out.println(arg);
             switch (arg) {
                 case FAST_FLAG -> timeScale = Math.min(FAST_SCALE, timeScale);
                 case FASTER_FLAG -> timeScale = Math.min(FASTER_SCALE, timeScale);
@@ -128,6 +129,10 @@ public final class VirtualWorld extends PApplet {
                 System.out.println(entity.log());
             }
         }
+        Potion pot = new Potion(Potion.POTION_KEY, pressed, imageLibrary.get(Potion.POTION_KEY), entityOptional);
+        world.addPotion(scheduler, pot);
+        pot.scheduleActions(scheduler, world, imageLibrary);
+        world.setBackgroundCell(pressed, new Background("potion", imageLibrary.get("background-potion"), 0));
     }
 
     /** Converts mouse position to world position. */
